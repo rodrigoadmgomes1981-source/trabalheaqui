@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS candidates (id UUID PRIMARY KEY, name TEXT NOT NULL, phone TEXT NOT NULL, email TEXT NOT NULL, profession TEXT NOT NULL, council TEXT, council_number TEXT, city TEXT NOT NULL, state CHAR(2) NOT NULL, experience_years INTEGER NOT NULL DEFAULT 0, skills TEXT NOT NULL DEFAULT '', resume_url TEXT NOT NULL, resume_name TEXT NOT NULL, resume_type TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE INDEX IF NOT EXISTS idx_candidates_profession_state ON candidates(profession,state);
+CREATE INDEX IF NOT EXISTS idx_candidates_created_at ON candidates(created_at DESC);
