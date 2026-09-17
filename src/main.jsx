@@ -1,14 +1,14 @@
 import React,{useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {Search,UploadCloud,FileText,Download,Eye,MessageCircle,Users,MapPin,Briefcase,CheckCircle2,Loader2} from 'lucide-react';
-import * as pdfjs from 'pdfjs-dist';
+import './polyfills.js';
 import mammoth from 'mammoth/mammoth.browser';
 import './styles.css';
 import './auto-upload.css';
 
-pdfjs.GlobalWorkerOptions.workerSrc=new URL('pdfjs-dist/build/pdf.worker.mjs',import.meta.url).toString();
 const phoneLink=p=>'https://wa.me/55'+String(p).replace(/\D/g,'');
-async function extractText(file){const buffer=await file.arrayBuffer();if(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf')){const pdf=await pdfjs.getDocument({data:buffer}).promise;let text='';for(let i=1;i<=pdf.numPages;i++){const page=await pdf.getPage(i),content=await page.getTextContent();text+=' '+content.items.map(x=>x.str).join(' ')}return text.trim()}if(file.name.toLowerCase().endsWith('.docx'))return (await mammoth.extractRawText({arrayBuffer:buffer})).value.trim();throw Error('Envie um currículo em PDF ou DOCX.')}
+async function getBuffer(file){if(typeof file.arrayBuffer==='function')return file.arrayBuffer();return new Response(file).arrayBuffer()}
+async function extractText(file){try{const buffer=await getBuffer(file),name=file.name.toLowerCase();if(file.type==='application/pdf'||name.endsWith('.pdf')){const pdfjs=await import('pdfjs-dist/legacy/build/pdf.mjs');pdfjs.GlobalWorkerOptions.workerSrc=new URL('pdfjs-dist/legacy/build/pdf.worker.mjs',import.meta.url).toString();const pdf=await pdfjs.getDocument({data:new Uint8Array(buffer),useWorkerFetch:false,isEvalSupported:false}).promise;const pages=[];for(let i=1;i<=pdf.numPages;i++){const page=await pdf.getPage(i),content=await page.getTextContent();pages.push(content.items.filter(x=>x&&typeof x.str==='string').map(x=>x.str).join(' '));page.cleanup()}await pdf.destroy();return pages.join(' ').trim()}if(name.endsWith('.docx'))return (await mammoth.extractRawText({arrayBuffer:buffer})).value.trim();throw Error('Envie um currículo em PDF ou DOCX.')}catch(error){console.error('Falha ao ler currículo',error);throw Error('Não foi possível ler este arquivo. Tente salvar o currículo novamente em PDF ou DOCX. Se ele for uma imagem digitalizada, será necessário usar OCR.')}}
 
 function App(){
  const [tab,setTab]=useState('search'),[query,setQuery]=useState(''),[results,setResults]=useState([]),[filters,setFilters]=useState(null),[loading,setLoading]=useState(false),[message,setMessage]=useState('');
