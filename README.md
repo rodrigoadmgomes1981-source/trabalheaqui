@@ -1,4 +1,4 @@
-# Ágile Talentos — Vercel
+# DOC CSC · Banco de Talentos — Vercel
 
 Aplicação React + Vite com Vercel Functions, Postgres (Neon), Blob e IA opcional.
 
@@ -42,7 +42,7 @@ Cada resultado da pesquisa tem o botão **Excluir**, que pede confirmação e re
 
 O sistema pode ser instalado como app (PWA) e aparece no menu **Compartilhar** do celular.
 
-- **Android (Chrome):** abra o site, toque em **Instalar no celular** (ou menu ⋮ → Instalar app). No WhatsApp, toque e segure o currículo → **Compartilhar** → **Ágile Talentos**. O sistema abre, lê e cadastra automaticamente.
+- **Android (Chrome):** abra o site, toque em **Instalar no celular** (ou menu ⋮ → Instalar app). No WhatsApp, toque e segure o currículo → **Compartilhar** → **Banco de Talentos**. O sistema abre, lê e cadastra automaticamente.
 - **iPhone:** o iOS não permite que sites recebam arquivos pelo Compartilhar. No WhatsApp, use **Compartilhar → Salvar em Arquivos** e envie pela tela **Cadastrar currículo**.
 
 > Atenção (LGPD): com o Blob, os currículos ficam em URLs públicas não listadas. Use `APP_PASSWORD` para proteger o acesso ao sistema.

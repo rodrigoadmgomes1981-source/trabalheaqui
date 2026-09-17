@@ -1,13 +1,13 @@
 {
-  "name": "Ágile · Banco de Talentos",
-  "short_name": "Ágile Talentos",
+  "name": "DOC CSC · Banco de Talentos",
+  "short_name": "Banco de Talentos",
   "description": "Banco de talentos com pesquisa inteligente e cadastro automático de currículos.",
   "lang": "pt-BR",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f4f7fa",
-  "theme_color": "#092e46",
+  "background_color": "#F8F7FC",
+  "theme_color": "#6A59F7",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

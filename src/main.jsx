@@ -303,7 +303,7 @@ function App(){
 
   return <div className="app">
     <aside>
-      <div className="brand"><div className="brandmark">A</div><div><b>Ágile</b><span>Banco de Talentos</span></div></div>
+      <div className="brand"><img src="/logo-doccsc.png" alt="doc csc · centro de serviços compartilhados"/><span>Banco de Talentos</span></div>
       <nav>
         <button type="button" className={tab==='search'?'active':''} onClick={()=>switchTab('search')}><Search/>Pesquisa inteligente</button>
         <button type="button" className={tab==='register'?'active':''} onClick={()=>switchTab('register')}><UploadCloud/>Cadastrar currículo</button>
@@ -333,7 +333,7 @@ function App(){
           <li>O iPhone não permite que sites recebam arquivos pelo "Compartilhar". No WhatsApp, abra o currículo, toque em <b>Compartilhar → Salvar em Arquivos</b> e depois envie pela tela <b>Cadastrar currículo</b>.</li>
         </ol>:<ol>
           <li>No Chrome, toque no menu <b>⋮</b> e depois em <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>).</li>
-          <li>No WhatsApp, toque e segure o currículo, toque em <b>Compartilhar</b> <Share2/> e escolha <b>Ágile Talentos</b>.</li>
+          <li>No WhatsApp, toque e segure o currículo, toque em <b>Compartilhar</b> <Share2/> e escolha <b>Banco de Talentos</b>.</li>
           <li>O sistema abre, lê e cadastra o currículo automaticamente.</li>
         </ol>}
         <button type="button" onClick={()=>setShowInstallHelp(false)}>Entendi</button>
@@ -386,7 +386,7 @@ function App(){
             <span>PDF ou DOCX · máximo 4 MB</span>
           </label>
           {isMobile()&&<p className="mobile-tip"><Share2/>{isStandalone()&&!isIOS()
-            ?<span>Dica: no WhatsApp, toque e segure o currículo, toque em <b>Compartilhar</b> e escolha <b>Ágile Talentos</b>.</span>
+            ?<span>Dica: no WhatsApp, toque e segure o currículo, toque em <b>Compartilhar</b> e escolha <b>Banco de Talentos</b>.</span>
             :<span>Quer receber currículos direto do WhatsApp? <button type="button" onClick={()=>setShowInstallHelp(true)}>Veja como</button></span>}</p>}
           {loading&&<div className="processing"><Loader2 className="spin"/><span><b>Lendo o currículo com inteligência artificial...</b><small>Identificando dados pessoais, profissão, localização e experiência.</small></span></div>}
           {message&&<div className={candidate?'success alert':'alert'}>{candidate&&<CheckCircle2/>}{message}</div>}
