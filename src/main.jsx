@@ -1,7 +1,7 @@
 import './polyfills.js';
 import React,{useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {Search,UploadCloud,FileText,Download,Eye,MessageCircle,Users,MapPin,Briefcase,CheckCircle2,Loader2,Lock,Trash2,Smartphone,Share2,Sparkles,Mail,Phone,Building2,GraduationCap,Award,Stethoscope,ChevronDown,ChevronUp,BadgeCheck,RefreshCw,AlertTriangle} from 'lucide-react';
+import {Search,UploadCloud,FileText,Download,Eye,MessageCircle,Users,MapPin,Briefcase,CheckCircle2,Loader2,Lock,Trash2,Smartphone,Share2,Sparkles,Mail,Phone,Building2,GraduationCap,Award,Stethoscope,ChevronDown,ChevronUp,BadgeCheck,RefreshCw,AlertTriangle,X} from 'lucide-react';
 import mammoth from 'mammoth/mammoth.browser';
 import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.mjs?url';
 import './styles.css';
@@ -143,6 +143,27 @@ function CandidateCard({c,onDelete,deleting}){
 
 const initials=name=>String(name||'').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()||'?';
 
+/** Pop-up de confirmação do cadastro: fecha no botão, no Esc ou clicando fora. */
+function SuccessDialog({onClose}){
+  const ref=useRef(null);
+  useEffect(()=>{
+    ref.current?.focus();
+    const onKey=e=>{if(e.key==='Escape')onClose()};
+    document.addEventListener('keydown',onKey);
+    document.body.style.overflow='hidden';
+    return ()=>{document.removeEventListener('keydown',onKey);document.body.style.overflow=''};
+  },[onClose]);
+  return <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
+    <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+      <button type="button" className="dialog-close" onClick={onClose} aria-label="Fechar"><X/></button>
+      <div className="dialog-icon"><CheckCircle2/></div>
+      <h2 id="dialog-title">Currículo cadastrado!</h2>
+      <p>O profissional já está no banco de talentos e aparece na pesquisa.</p>
+      <button type="button" className="dialog-ok" ref={ref} onClick={onClose}>Fechar</button>
+    </div>
+  </div>;
+}
+
 async function extractText(file){
   const name=file.name.toLowerCase();
   const isPdf=file.type==='application/pdf'||name.endsWith('.pdf');
@@ -189,6 +210,7 @@ function App(){
   const [updating,setUpdating]=useState(false);
   const [updateInfo,setUpdateInfo]=useState('');
   const [showInstallHelp,setShowInstallHelp]=useState(false);
+  const [saved,setSaved]=useState(false);
   const inputRef=useRef(null);
 
   useEffect(()=>{
@@ -253,11 +275,14 @@ function App(){
       const fd=new FormData();
       fd.append('resume',file);
       fd.append('extractedText',extractedText.slice(0,50000));
-      const d=await api('/api/candidates',{method:'POST',body:fd});
-      setCandidate(d.candidate);
-      setMessage('Currículo lido e profissional cadastrado automaticamente.');
+      await api('/api/candidates',{method:'POST',body:fd});
+      // Limpa a tela e confirma o cadastro no pop-up.
+      setCandidate(null);
+      setMessage('');
       setFile(null);
+      setDragging(false);
       if(inputRef.current)inputRef.current.value='';
+      setSaved(true);
     }catch(err){handleError(err)}finally{setLoading(false)}
   };
 
@@ -406,6 +431,7 @@ function App(){
         </form>
       </section>}
     </main>
+    {saved&&<SuccessDialog onClose={()=>setSaved(false)}/>}
   </div>;
 }
 

@@ -27,3 +27,18 @@
 .searchbox>div.examples,.searchbox>div.examples:focus-within{border:0;padding:0;box-shadow:none;border-radius:0;flex-wrap:wrap}
 .update-old{display:flex;gap:11px;align-items:center;background:#fffaf0;border:1px solid #f0e0bd;border-radius:12px;padding:13px 15px;margin-bottom:18px;font-size:13px;color:#6b5420}.update-old>svg{width:19px;flex:none;color:#c99a1e}.update-old div{display:grid;gap:3px}.update-old small{color:#8a7440}.update-old button{margin-left:auto;border:0;background:#c99a1e;color:#fff;border-radius:9px;padding:9px 14px;font:700 12px 'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}.update-old button svg{width:15px}
 @media(max-width:600px){.update-old{flex-wrap:wrap}.update-old button{margin-left:0;width:100%;justify-content:center}}
+
+/* Pop-up de confirmação do cadastro */
+.overlay{position:fixed;inset:0;background:#241c5ecc;backdrop-filter:blur(3px);display:grid;place-items:center;padding:20px;z-index:50;animation:fade .16s ease-out}
+.dialog{position:relative;background:#fff;border-radius:20px;padding:34px 30px 28px;width:100%;max-width:400px;text-align:center;box-shadow:0 24px 60px #241c5e40;animation:pop .2s ease-out}
+.dialog-icon{width:66px;height:66px;margin:0 auto 16px;border-radius:50%;background:#EEEBFE;color:#5B4BEE;display:grid;place-items:center}
+.dialog-icon svg{width:36px;height:36px}
+.dialog h2{margin:0 0 8px;font:800 22px Manrope;color:#241C5E}
+.dialog p{margin:0 0 22px;color:#6B6A85;font-size:14px;line-height:1.55}
+.dialog-ok{width:100%;border:0;background:#6A59F7;color:#fff;border-radius:11px;padding:14px;font:700 14px 'DM Sans',sans-serif;cursor:pointer}
+.dialog-ok:hover{background:#5B4BEE}
+.dialog-close{position:absolute;top:12px;right:12px;border:0;background:none;color:#8887A0;padding:6px;border-radius:8px;cursor:pointer;line-height:0}
+.dialog-close:hover{background:#F8F7FC;color:#1D1B34}
+.dialog-close svg{width:18px;height:18px}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
