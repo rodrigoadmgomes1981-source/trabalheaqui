@@ -37,10 +37,9 @@ function phoneLink(p){
 }
 
 function resumeLink(c,download){
-  const pass=getPassword();
-  if(c.resume_url&&/^https?:\/\//.test(c.resume_url))return c.resume_url+(download?(c.resume_url.includes('?')?'&':'?')+'download=1':'');
   const params=new URLSearchParams({id:c.id});
   if(download)params.set('download','1');
+  const pass=getPassword();
   if(pass)params.set('key',pass);
   return `/api/resume?${params}`;
 }

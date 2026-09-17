@@ -81,7 +81,7 @@ export default async function handler(req,res){
     const bytes=Buffer.from(await file.arrayBuffer());
     const safeName=(file.name||'curriculo').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w.-]+/g,'_').slice(-120);
     const type=file.type||(/\.pdf$/i.test(file.name)?'application/pdf':'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    let resumeUrl=`/api/resume?id=${id}`,resumeData=bytes;
+    let resumeUrl=`/api/resume?id=${id}`,resumeData=bytes.toString('base64');
     if(process.env.BLOB_READ_WRITE_TOKEN){
       try{
         const blob=await put(`curriculos/${id}-${safeName}`,bytes,{access:'public',addRandomSuffix:true,contentType:type,token:process.env.BLOB_READ_WRITE_TOKEN});
@@ -89,7 +89,7 @@ export default async function handler(req,res){
       }catch(error){console.warn('Blob indisponível; usando Postgres.',error?.message)}
     }
     await sql`INSERT INTO candidates(id,name,phone,email,profession,council,council_number,city,state,experience_years,skills,resume_url,resume_name,resume_type,resume_data)
-      VALUES(${id},${candidate.name},${candidate.phone},${candidate.email},${candidate.profession},${candidate.council},${candidate.councilNumber},${candidate.city},${candidate.state},${candidate.experienceYears},${candidate.skills},${resumeUrl},${file.name||safeName},${type},${resumeData})`;
+      VALUES(${id},${candidate.name},${candidate.phone},${candidate.email},${candidate.profession},${candidate.council},${candidate.councilNumber},${candidate.city},${candidate.state},${candidate.experienceYears},${candidate.skills},${resumeUrl},${file.name||safeName},${type},decode(${resumeData}::text,'base64'))`;
     return res.status(201).json({ok:true,id,candidate});
   }catch(e){
     console.error(e);
