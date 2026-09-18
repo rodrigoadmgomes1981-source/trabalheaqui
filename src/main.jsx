@@ -1,9 +1,10 @@
 import './polyfills.js';
 import React,{useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {Search,UploadCloud,FileText,Download,Eye,MessageCircle,Users,MapPin,Briefcase,CheckCircle2,Loader2,Lock,Trash2,Smartphone,Share2,Sparkles,Mail,Phone,Building2,GraduationCap,Award,Stethoscope,ChevronDown,ChevronUp,BadgeCheck,RefreshCw,AlertTriangle,X,LayoutGrid,ArrowLeft,UserRound,Clock3,PencilLine} from 'lucide-react';
+import {Search,UploadCloud,FileText,Download,Eye,MessageCircle,Users,MapPin,Briefcase,CheckCircle2,Loader2,Lock,Trash2,Smartphone,Share2,Sparkles,Mail,Phone,Building2,GraduationCap,Award,Stethoscope,ChevronDown,ChevronUp,BadgeCheck,RefreshCw,AlertTriangle,X,LayoutGrid,ArrowLeft,UserRound,Clock3,PencilLine,Briefcase as BriefcaseIcon,Plus,ThumbsUp,ThumbsDown,Undo2,Pencil,Building,BadgeDollarSign,Eye as EyeIcon,EyeOff,CircleDot} from 'lucide-react';
 import mammoth from 'mammoth/mammoth.browser';
 import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.mjs?url';
+import {CONTRATOS,ESTADOS,ETAPAS,SITUACOES,etapaPorChave,indiceEtapa} from '../lib/vagas.js';
 import './styles.css';
 import './auto-upload.css';
 
@@ -13,7 +14,7 @@ const PASS_KEY='agile-app-password';
 function getPassword(){try{return sessionStorage.getItem(PASS_KEY)||''}catch{return ''}}
 function setPassword(v){try{v?sessionStorage.setItem(PASS_KEY,v):sessionStorage.removeItem(PASS_KEY)}catch{}}
 
-class ApiError extends Error{constructor(message,auth){super(message);this.auth=auth}}
+class ApiError extends Error{constructor(message,auth,erros){super(message);this.auth=auth;this.erros=erros}}
 
 async function api(url,options={}){
   const headers={...(options.headers||{})};
@@ -25,7 +26,7 @@ async function api(url,options={}){
   try{d=await r.json()}catch{}
   if(r.status===401)throw new ApiError(d.error||'Senha de acesso necessária.',true);
   if(r.status===413)throw new ApiError('O arquivo deve ter até 4 MB.');
-  if(!r.ok)throw new ApiError(d.error||`Erro inesperado no servidor (${r.status}).`);
+  if(!r.ok)throw new ApiError(d.error||`Erro inesperado no servidor (${r.status}).`,false,d.erros);
   return d;
 }
 
@@ -79,6 +80,13 @@ const EXAMPLES=[
 ];
 const yearsText=n=>`${n} ${n===1?'ano':'anos'}`;
 
+const TITULOS={
+  search:{titulo:'Encontre o profissional certo',sub:'Pesquise em linguagem natural e encontre candidatos em segundos.'},
+  register:{titulo:'Cadastro de profissional',sub:'Envie o currículo e o sistema cadastra o profissional automaticamente.'},
+  painel:{titulo:'Painel por profissão',sub:'Quantos profissionais existem no banco de talentos, por profissão. Clique em uma profissão para ver os currículos.'},
+  vagas:{titulo:'Vagas',sub:'Publique as vagas do DOC CSC e acompanhe quem se candidatou no portal Talentos DOC.'}
+};
+
 function expLabel(f){
   if(f.maxExperience===0)return 'Sem experiência / recém-formado';
   if(f.maxExperience!=null&&f.minExperience>0)return `${f.minExperience} a ${yearsText(f.maxExperience)}`;
@@ -93,7 +101,7 @@ function Chips({items,matched=[],className=''}){
   return <div className={'tags '+className}>{items.map(t=><i key={t} className={m.some(x=>t.toLowerCase().includes(x)||x.includes(t.toLowerCase()))?'hit':''}>{t}</i>)}</div>;
 }
 
-function CandidateCard({c,onDelete,deleting}){
+function CandidateCard({c,onDelete,deleting,triagem}){
   const [open,setOpen]=useState(false);
   const wa=phoneLink(c.phone);
   const place=[c.city,c.state].filter(Boolean).join(' / ')||'Local não informado';
@@ -139,7 +147,8 @@ function CandidateCard({c,onDelete,deleting}){
         ?<span className="sem-arquivo"><PencilLine/>Cadastro digitado pelo candidato</span>
         :<><a href={resumeLink(c,false)} target="_blank" rel="noreferrer"><Eye/>Visualizar</a>
            <a href={resumeLink(c,true)} download={c.resume_name}><Download/>Baixar</a></>}
-      <button type="button" className="danger" onClick={()=>onDelete(c)} disabled={deleting}>{deleting?<Loader2 className="spin"/>:<Trash2/>}Excluir</button>
+      {onDelete&&<button type="button" className="danger" onClick={()=>onDelete(c)} disabled={deleting}>{deleting?<Loader2 className="spin"/>:<Trash2/>}Excluir</button>}
+      {triagem}
     </div>
   </article>;
 }
@@ -214,6 +223,10 @@ function App(){
   const [updateInfo,setUpdateInfo]=useState('');
   const [showInstallHelp,setShowInstallHelp]=useState(false);
   const [saved,setSaved]=useState(false);
+  const [vagas,setVagas]=useState(null);          // lista de vagas com contagens
+  const [vagaAberta,setVagaAberta]=useState(null);// {vaga, candidaturas}
+  const [editandoVaga,setEditandoVaga]=useState(null);
+  const [errosVaga,setErrosVaga]=useState({});
   const [recentes,setRecentes]=useState(null);    // {horas,total} das últimas 2 horas
   const [painel,setPainel]=useState(null);        // {total, grupos:[...]}
   const [grupo,setGrupo]=useState(null);          // {grupo:{...}, results:[...]}
@@ -374,9 +387,68 @@ function App(){
     finally{setLoading(false)}
   };
 
+  const carregarVagas=async()=>{
+    setLoading(true);setMessage('');
+    try{setVagas((await api('/api/jobs')).vagas||[])}
+    catch(err){handleError(err)}
+    finally{setLoading(false)}
+  };
+
+  const abrirVaga=async v=>{
+    setLoading(true);setMessage('');
+    try{setVagaAberta(await api(`/api/applications?job=${encodeURIComponent(v.id)}`))}
+    catch(err){handleError(err)}
+    finally{setLoading(false)}
+  };
+
+  const VAGA_VAZIA={title:'',city:'',state:'',location:'',description:'',salary:'',contract:'CLT',status:'publicada'};
+
+  const salvarVaga=async e=>{
+    e.preventDefault();
+    setLoading(true);setMessage('');setErrosVaga({});
+    const {id,...dados}=editandoVaga;
+    try{
+      const resposta=id
+        ? await api(`/api/jobs?id=${encodeURIComponent(id)}`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(dados)})
+        : await api('/api/jobs',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(dados)});
+      setEditandoVaga(null);
+      await carregarVagas();
+      if(vagaAberta?.vaga?.id===resposta.vaga?.id)setVagaAberta(a=>a&&{...a,vaga:resposta.vaga});
+    }catch(err){
+      if(err.erros)setErrosVaga(err.erros);
+      handleError(err);
+    }finally{setLoading(false)}
+  };
+
+  const mudarSituacao=async(v,status)=>{
+    try{
+      await api(`/api/jobs?id=${encodeURIComponent(v.id)}`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({status})});
+      setVagas(lista=>lista.map(x=>x.id===v.id?{...x,status}:x));
+      setVagaAberta(a=>a&&a.vaga.id===v.id?{...a,vaga:{...a.vaga,status}}:a);
+    }catch(err){handleError(err)}
+  };
+
+  const excluirVaga=async v=>{
+    if(!window.confirm(`Excluir a vaga "${v.title}"?\n\nAs candidaturas dela também serão removidas. Os currículos continuam no banco de talentos.`))return;
+    try{
+      await api(`/api/jobs?id=${encodeURIComponent(v.id)}`,{method:'DELETE'});
+      setVagas(lista=>lista.filter(x=>x.id!==v.id));
+      setVagaAberta(a=>a&&a.vaga.id===v.id?null:a);
+    }catch(err){handleError(err)}
+  };
+
+  /** Curtir avança a etapa; não curtir devolve o candidato ao banco de talentos. */
+  const triar=async(candidatura,acao)=>{
+    try{
+      const r=await api(`/api/applications?id=${encodeURIComponent(candidatura.applicationId)}`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({acao})});
+      setVagaAberta(a=>a&&{...a,candidaturas:a.candidaturas.map(c=>c.applicationId===candidatura.applicationId?{...c,stage:r.stage}:c)});
+    }catch(err){handleError(err)}
+  };
+
   const switchTab=t=>{
-    setTab(t);setMessage('');setGrupo(null);
+    setTab(t);setMessage('');setGrupo(null);setEditandoVaga(null);setVagaAberta(null);
     if(t==='painel')carregarPainel();
+    if(t==='vagas')carregarVagas();
   };
 
   return <div className="app">
@@ -389,6 +461,7 @@ function App(){
         </button>
         <button type="button" className={tab==='register'?'active':''} onClick={()=>switchTab('register')}><UploadCloud/>Cadastrar currículo</button>
         <button type="button" className={tab==='painel'?'active':''} onClick={()=>switchTab('painel')}><LayoutGrid/>Painel por profissão</button>
+        <button type="button" className={tab==='vagas'?'active':''} onClick={()=>switchTab('vagas')}><BriefcaseIcon/>Vagas</button>
       </nav>
       {!isStandalone()&&(installEvent||isMobile())&&<button type="button" className="install" onClick={install}><Smartphone/>Instalar no celular</button>}
       <div className="aside-note"><Users/><b>Talentos em um só lugar</b><span>Encontre profissionais por função, região e experiência.</span></div>
@@ -397,8 +470,8 @@ function App(){
       <header>
         <div>
           <small>RECRUTAMENTO INTELIGENTE</small>
-          <h1>{tab==='search'?'Encontre o profissional certo':tab==='register'?'Cadastro de profissional':'Painel por profissão'}</h1>
-          <p>{tab==='search'?'Pesquise em linguagem natural e encontre candidatos em segundos.':tab==='register'?'Envie o currículo e o sistema cadastra o profissional automaticamente.':'Quantos profissionais existem no banco de talentos, por profissão. Clique em uma profissão para ver os currículos.'}</p>
+          <h1>{TITULOS[tab]?.titulo}</h1>
+          <p>{TITULOS[tab]?.sub}</p>
         </div>
         <div className="status"><i/>Sistema online</div>
       </header>
@@ -494,6 +567,147 @@ function App(){
 
             {painel.grupos.length===0&&<div className="empty"><UserRound/><h3>Nenhum currículo cadastrado</h3><p>Assim que os primeiros currículos entrarem, eles aparecem aqui agrupados por profissão.</p></div>}
           </>}
+        </>}
+      </section>:tab==='vagas'?<section>
+        {message&&<div className="alert">{message}</div>}
+
+        {editandoVaga?<form className="register vaga-form" onSubmit={salvarVaga}>
+          <div className="form-title"><div><BriefcaseIcon/></div><span>
+            <h2>{editandoVaga.id?'Editar vaga':'Nova vaga'}</h2>
+            <p>O que você publicar aqui aparece no portal Talentos DOC para os candidatos.</p>
+          </span></div>
+
+          <div className="grid">
+            <label className="wide">Vaga
+              <input value={editandoVaga.title} onChange={e=>setEditandoVaga(v=>({...v,title:e.target.value}))} placeholder="Ex.: Enfermeiro - UTI adulto" maxLength={120}/>
+              {errosVaga.title&&<em className="erro-campo">{errosVaga.title}</em>}
+            </label>
+            <label>Cidade
+              <input value={editandoVaga.city} onChange={e=>setEditandoVaga(v=>({...v,city:e.target.value}))} placeholder="Ex.: Porto Velho"/>
+              {errosVaga.city&&<em className="erro-campo">{errosVaga.city}</em>}
+            </label>
+            <label>Estado
+              <select value={editandoVaga.state} onChange={e=>setEditandoVaga(v=>({...v,state:e.target.value}))}>
+                <option value="">Selecione</option>
+                {ESTADOS.map(e=><option key={e.uf} value={e.uf}>{e.nome} ({e.uf})</option>)}
+              </select>
+              {errosVaga.state&&<em className="erro-campo">{errosVaga.state}</em>}
+            </label>
+            <label>Local de trabalho
+              <input value={editandoVaga.location} onChange={e=>setEditandoVaga(v=>({...v,location:e.target.value}))} placeholder="Ex.: Hospital de Base - UTI 2º andar"/>
+              {errosVaga.location&&<em className="erro-campo">{errosVaga.location}</em>}
+            </label>
+            <label>Valor
+              <input value={editandoVaga.salary} onChange={e=>setEditandoVaga(v=>({...v,salary:e.target.value}))} placeholder="Ex.: R$ 8.500/mês ou R$ 1.200 por plantão"/>
+              {errosVaga.salary&&<em className="erro-campo">{errosVaga.salary}</em>}
+            </label>
+            <label>Tipo de contratação
+              <select value={editandoVaga.contract} onChange={e=>setEditandoVaga(v=>({...v,contract:e.target.value}))}>
+                {CONTRATOS.map(c=><option key={c} value={c}>{c}</option>)}
+              </select>
+              {errosVaga.contract&&<em className="erro-campo">{errosVaga.contract}</em>}
+            </label>
+            <label>Situação
+              <select value={editandoVaga.status} onChange={e=>setEditandoVaga(v=>({...v,status:e.target.value}))}>
+                {SITUACOES.map(s=><option key={s.chave} value={s.chave}>{s.label}</option>)}
+              </select>
+            </label>
+            <label className="wide">Descrição da vaga
+              <textarea value={editandoVaga.description} onChange={e=>setEditandoVaga(v=>({...v,description:e.target.value}))}
+                placeholder="Escala, requisitos, atividades, benefícios..." style={{minHeight:130}} maxLength={4000}/>
+              {errosVaga.description&&<em className="erro-campo">{errosVaga.description}</em>}
+            </label>
+          </div>
+
+          <div className="vaga-form-acoes">
+            <button type="button" className="voltar" onClick={()=>{setEditandoVaga(null);setErrosVaga({})}}>Cancelar</button>
+            <button className="submit" disabled={loading}>{loading?<Loader2 className="spin"/>:<CheckCircle2/>}{editandoVaga.id?'Salvar alterações':'Publicar vaga'}</button>
+          </div>
+        </form>
+
+        :vagaAberta?<>
+          <div className="grupo-topo">
+            <button type="button" className="voltar" onClick={()=>setVagaAberta(null)}><ArrowLeft/>Voltar às vagas</button>
+            <div>
+              <h2>{vagaAberta.vaga.title}</h2>
+              <span>{[vagaAberta.vaga.city,vagaAberta.vaga.state].filter(Boolean).join('/')} · {vagaAberta.vaga.location} · {vagaAberta.vaga.contract} · {vagaAberta.vaga.salary}</span>
+            </div>
+          </div>
+
+          <div className="etapas-resumo">
+            {[...ETAPAS,{chave:'descartado',label:'Voltaram ao banco'}].map(et=>{
+              const n=vagaAberta.candidaturas.filter(c=>c.stage===et.chave).length;
+              return <div key={et.chave} className={'etapa-chip'+(et.chave==='descartado'?' fora':'')}><b>{n}</b>{et.label}</div>;
+            })}
+          </div>
+
+          {[...ETAPAS,{chave:'descartado',label:'Voltaram ao banco de talentos'}].map(et=>{
+            const lista=vagaAberta.candidaturas.filter(c=>c.stage===et.chave);
+            if(!lista.length)return null;
+            const ultima=indiceEtapa(et.chave)===ETAPAS.length-1;
+            return <div key={et.chave} className="etapa-bloco">
+              <h3><CircleDot/>{et.label}<em>{lista.length}</em></h3>
+              <div className="cards">{lista.map(c=><CandidateCard key={c.applicationId} c={c} triagem={
+                <div className="triagem">
+                  {et.chave==='descartado'
+                    ?<button type="button" className="curtir" onClick={()=>triar(c,'restaurar')}><Undo2/>Trazer de volta para a vaga</button>
+                    :<>
+                      <button type="button" className="curtir" onClick={()=>triar(c,'curtir')} disabled={ultima}>
+                        <ThumbsUp/>{ultima?'Contratado':'Curtir · avançar etapa'}
+                      </button>
+                      <button type="button" className="descurtir" onClick={()=>triar(c,'descartar')}><ThumbsDown/>Não curtir · banco de talentos</button>
+                      {indiceEtapa(c.stage)>0&&<button type="button" className="voltar-etapa" onClick={()=>triar(c,'voltar')}><Undo2/>Voltar etapa</button>}
+                    </>}
+                </div>
+              }/>)}</div>
+            </div>;
+          })}
+
+          {vagaAberta.candidaturas.length===0&&<div className="empty"><UserRound/><h3>Nenhum candidato ainda</h3><p>Quando alguém demonstrar interesse por esta vaga no portal Talentos DOC, aparece aqui.</p></div>}
+        </>:<>
+          <div className="painel-resumo">
+            <div><b>{vagas?.length||0}</b><span>{vagas?.length===1?'vaga cadastrada':'vagas cadastradas'}</span></div>
+            <div><b>{(vagas||[]).filter(v=>v.status==='publicada').length}</b><span>publicadas no portal</span></div>
+            <button type="button" onClick={()=>{setErrosVaga({});setEditandoVaga({...VAGA_VAZIA})}}><Plus/>Nova vaga</button>
+          </div>
+
+          {loading&&!vagas&&<div className="processing"><Loader2 className="spin"/><span><b>Carregando as vagas...</b><small>Só um instante.</small></span></div>}
+
+          <div className="vagas">
+            {(vagas||[]).map(v=><article key={v.id} className={'vaga-card'+(v.status!=='publicada'?' inativa':'')}>
+              <div className="vaga-topo">
+                <div>
+                  <h3>{v.title}</h3>
+                  <div className="vaga-meta">
+                    <span><MapPin/>{[v.city,v.state].filter(Boolean).join('/')}</span>
+                    <span><Building/>{v.location}</span>
+                    <span><BriefcaseIcon/>{v.contract}</span>
+                    <span><BadgeDollarSign/>{v.salary}</span>
+                  </div>
+                </div>
+                <span className={'situacao '+v.status}>{SITUACOES.find(s=>s.chave===v.status)?.label||v.status}</span>
+              </div>
+
+              {v.description&&<p className="vaga-desc">{v.description}</p>}
+
+              <button type="button" className="vaga-candidatos" onClick={()=>abrirVaga(v)}>
+                <b>{v.total}</b>
+                <span>{v.total===1?'candidato interessado':'candidatos interessados'}
+                  {v.total>0&&<small>{v.novos} novo(s) · {v.avancados} em etapa · {v.descartados} no banco</small>}</span>
+                <ChevronDown/>
+              </button>
+
+              <div className="vaga-acoes">
+                <button type="button" onClick={()=>{setErrosVaga({});setEditandoVaga({id:v.id,title:v.title,city:v.city,state:v.state,location:v.location,description:v.description,salary:v.salary,contract:v.contract,status:v.status})}}><Pencil/>Editar</button>
+                {v.status==='publicada'
+                  ?<button type="button" onClick={()=>mudarSituacao(v,'pausada')}><EyeOff/>Pausar</button>
+                  :<button type="button" onClick={()=>mudarSituacao(v,'publicada')}><EyeIcon/>Publicar</button>}
+                <button type="button" className="danger" onClick={()=>excluirVaga(v)}><Trash2/>Excluir</button>
+              </div>
+            </article>)}
+          </div>
+
+          {vagas&&vagas.length===0&&<div className="empty"><BriefcaseIcon/><h3>Nenhuma vaga cadastrada</h3><p>Crie a primeira vaga para que ela apareça no portal Talentos DOC.</p></div>}
         </>}
       </section>:<section>
         <form className="register auto-register" onSubmit={submit}>

@@ -34,6 +34,16 @@ Com `OPENAI_API_KEY`, a IA interpreta a pesquisa e, no cadastro, extrai setores,
 
 Currículos cadastrados antes da versão 1.4 não têm o texto completo indexado. Quando existirem, a tela de pesquisa mostra um aviso com o botão **Atualizar agora**: o sistema relê os arquivos guardados (`/api/reprocess`), extrai o texto e preenche setores, especializações, locais de trabalho, formação e resumo, sem sobrescrever dados já preenchidos. Currículos digitalizados (imagem, sem texto) não podem ser lidos e são apenas marcados para não travar a fila.
 
+## Vagas e triagem
+
+A aba **Vagas** publica as oportunidades e acompanha quem se candidatou no portal **Talentos DOC**.
+
+- Cada vaga tem: vaga, cidade, estado, local de trabalho, descrição, valor e tipo de contratação (**CLT, PJ ou Sócio**), além da situação: *publicada* (aparece no portal do candidato), *pausada* (some do portal, continua aqui) ou *encerrada*.
+- O cartão da vaga mostra quantos candidatos se interessaram; clicando nele, abrem-se os currículos por etapa, com os mesmos botões de sempre (WhatsApp, Visualizar, Baixar).
+- **Curtir** avança o candidato uma etapa: Recebido → Triagem → Entrevista → Proposta → Contratado. **Não curtir** devolve o candidato ao banco de talentos (a ficha continua no banco, só sai da esteira da vaga) e um botão traz de volta se for engano. Também há *Voltar etapa*.
+- Excluir a vaga remove as candidaturas dela; os currículos continuam no banco de talentos.
+- Tabelas `jobs` e `applications`, criadas automaticamente. APIs: `/api/jobs` (GET/POST/PATCH/DELETE) e `/api/applications` (GET por vaga, PATCH com `acao`: curtir, descartar, voltar, restaurar). As etapas e as regras ficam em `lib/vagas.js`, compartilhado com o portal do candidato.
+
 ## Currículos recebidos nas últimas 2 horas
 
 O botão **Pesquisa inteligente** mostra um contador com quantos currículos entraram nas últimas 2 horas, e a tela de pesquisa traz a mesma informação com o botão **Ver os mais recentes**, que lista esses cadastros. O número é atualizado a cada minuto, quando a aba volta a ficar visível e logo após cada cadastro feito no portal.

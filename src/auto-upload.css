@@ -97,3 +97,59 @@ nav button.active .badge{background:#fff;color:#4B3ECB}
   .recentes{flex-wrap:wrap}
   .recentes button{margin-left:0;width:100%}
 }
+
+/* Vagas */
+.vagas{display:grid;gap:14px}
+.vaga-card{background:#fff;border:1px solid #E4E1F0;border-radius:16px;padding:20px;display:grid;gap:14px}
+.vaga-card.inativa{background:#FBFAFE;border-style:dashed}
+.vaga-topo{display:flex;align-items:flex-start;gap:14px;justify-content:space-between;flex-wrap:wrap}
+.vaga-topo h3{margin:0 0 6px;font:800 18px Manrope;color:#241C5E}
+.vaga-meta{display:flex;flex-wrap:wrap;gap:6px 16px}
+.vaga-meta span{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#6E6C87}
+.vaga-meta svg{width:14px;color:#8887A0}
+.situacao{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:20px;padding:5px 11px;white-space:nowrap}
+.situacao.publicada{background:#EEEBFE;color:#4B3ECB}
+.situacao.pausada{background:#FFF6DC;color:#8A6A12}
+.situacao.encerrada{background:#F1EFF8;color:#6E6C87}
+.vaga-desc{margin:0;font-size:13px;color:#45435F;line-height:1.55;white-space:pre-line;max-height:5.2em;overflow:hidden}
+.vaga-candidatos{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid #DED8FB;background:#F8F7FC;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit;transition:.15s}
+.vaga-candidatos:hover{border-color:#6A59F7;background:#EEEBFE}
+.vaga-candidatos b{font:800 26px Manrope;color:#6A59F7;line-height:1}
+.vaga-candidatos span{display:grid;gap:2px;font-size:13px;font-weight:700;color:#241C5E}
+.vaga-candidatos small{font-weight:500;font-size:12px;color:#6E6C87}
+.vaga-candidatos svg{width:16px;margin-left:auto;color:#6E6C87;transform:rotate(-90deg)}
+.vaga-acoes{display:flex;gap:8px;flex-wrap:wrap}
+.vaga-acoes button{border:1px solid #DFDBEF;background:#fff;color:#3D3A6B;border-radius:9px;padding:8px 12px;font:700 12px 'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;cursor:pointer}
+.vaga-acoes button:hover{background:#EEEBFE;border-color:#6A59F7;color:#4B3ECB}
+.vaga-acoes button svg{width:14px}
+.vaga-acoes button.danger{color:#B0402F;border-color:#F1D2CC}
+.vaga-acoes button.danger:hover{background:#FFF1EE;border-color:#E08A76;color:#B0402F}
+
+.vaga-form{max-width:1050px}
+.vaga-form .erro-campo{display:block;margin-top:5px;font-style:normal;font-size:12px;color:#A44032}
+.vaga-form-acoes{display:flex;gap:10px;align-items:center;margin-top:20px}
+.vaga-form-acoes .voltar{border:1px solid #DFDBEF;background:#fff;color:#3D3A6B;border-radius:9px;padding:12px 16px;font:700 13px 'DM Sans',sans-serif;cursor:pointer}
+.vaga-form-acoes .voltar:hover{background:#EEEBFE}
+.vaga-form-acoes .submit{margin-left:auto}
+
+/* Etapas da triagem */
+.etapas-resumo{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.etapa-chip{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #E4E1F0;border-radius:12px;padding:10px 14px;font-size:12px;font-weight:700;color:#45435F}
+.etapa-chip b{font:800 18px Manrope;color:#6A59F7}
+.etapa-chip.fora b{color:#8A6A12}
+.etapa-bloco{margin-bottom:26px}
+.etapa-bloco h3{display:flex;align-items:center;gap:8px;margin:0 0 12px;font:800 15px Manrope;color:#241C5E}
+.etapa-bloco h3 svg{width:15px;color:#6A59F7}
+.etapa-bloco h3 em{font-style:normal;font-size:12px;font-weight:700;color:#4B3ECB;background:#EEEBFE;border-radius:20px;padding:2px 9px}
+
+.triagem{display:grid;gap:7px;width:100%}
+.triagem button{border:1px solid #DFDBEF;background:#fff;border-radius:9px;padding:9px 11px;font:700 12px 'DM Sans',sans-serif;display:flex;align-items:center;gap:7px;cursor:pointer;justify-content:flex-start}
+.triagem button svg{width:15px}
+.triagem .curtir{background:#EEEBFE;border-color:#D3CBF8;color:#4B3ECB}
+.triagem .curtir:hover:not(:disabled){background:#E5E0FD}
+.triagem .curtir:disabled{opacity:.6;cursor:default}
+.triagem .descurtir{color:#8A6A12;border-color:#F0E0BD;background:#FFFAF0}
+.triagem .descurtir:hover{background:#FFF6DC}
+.triagem .voltar-etapa{color:#6E6C87}
+.triagem .voltar-etapa:hover{background:#F8F7FC}
+@media(max-width:900px){.vaga-topo{flex-direction:column}}
