@@ -34,6 +34,25 @@ Com `OPENAI_API_KEY`, a IA interpreta a pesquisa e, no cadastro, extrai setores,
 
 Currículos cadastrados antes da versão 1.4 não têm o texto completo indexado. Quando existirem, a tela de pesquisa mostra um aviso com o botão **Atualizar agora**: o sistema relê os arquivos guardados (`/api/reprocess`), extrai o texto e preenche setores, especializações, locais de trabalho, formação e resumo, sem sobrescrever dados já preenchidos. Currículos digitalizados (imagem, sem texto) não podem ser lidos e são apenas marcados para não travar a fila.
 
+## Currículos recebidos nas últimas 2 horas
+
+O botão **Pesquisa inteligente** mostra um contador com quantos currículos entraram nas últimas 2 horas, e a tela de pesquisa traz a mesma informação com o botão **Ver os mais recentes**, que lista esses cadastros. O número é atualizado a cada minuto, quando a aba volta a ficar visível e logo após cada cadastro feito no portal.
+
+- `GET /api/recent` devolve `{horas,total}` (consulta leve, só um `count`); `GET /api/recent?listar=1` devolve também os currículos do período, e `?horas=N` muda a janela (1 a 72 horas).
+
+## Painel por profissão
+
+A terceira aba do menu (**Painel por profissão**) mostra quantos profissionais existem no banco, agrupados por profissão, com o total geral e o número de profissões. Clicar em um cartão abre os currículos daquele grupo, com os mesmos botões da pesquisa (WhatsApp, Visualizar, Baixar, Excluir) e um **Voltar ao painel**.
+
+- `GET /api/stats` devolve `{total, grupos:[{chave,label,rotulo,total}]}`; `GET /api/stats?grupo=<chave>` devolve os currículos do grupo.
+- O agrupamento é calculado na hora (sem coluna nova no banco) em `lib/profissoes.js`: profissões equivalentes caem no mesmo grupo (Enfermeira/Enfermeiro → Enfermeiros; Técnica/Técnico em Enfermagem → Técnicos de Enfermagem).
+- **Médicos são separados por especialidade**: Médicos Pediatras, Médicos GO, Médicos Ortopedistas, Médicos Clínicos... A especialidade é procurada na profissão e no texto do currículo (especializações, resumo, formação e índice de busca) pela lista `ESPECIALIDADES`, que cobre as principais especialidades; sem indicação, o candidato cai em "Médicos (especialidade não informada)". Para incluir outra especialidade, basta acrescentar uma linha nessa lista.
+- Excluir um currículo dentro do painel já atualiza a contagem na tela.
+
+## Cadastros sem arquivo
+
+Currículos enviados pelo portal do candidato no modo "Preencher meus dados" chegam sem arquivo (`resume_type='manual'`). Eles aparecem normalmente na pesquisa e no painel; no lugar de **Visualizar** e **Baixar**, o cartão mostra "Cadastro digitado pelo candidato".
+
 ## Excluir currículos
 
 Cada resultado da pesquisa tem o botão **Excluir**, que pede confirmação e remove o cadastro e o arquivo (do banco ou do Blob).

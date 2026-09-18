@@ -42,3 +42,58 @@
 .dialog-close svg{width:18px;height:18px}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+
+/* Painel por profissão */
+.painel-resumo{display:flex;align-items:center;gap:26px;background:#fff;border:1px solid #E4E1F0;border-radius:16px;padding:18px 22px;margin-bottom:18px;flex-wrap:wrap}
+.painel-resumo>div{display:flex;align-items:baseline;gap:8px}
+.painel-resumo b{font:800 26px Manrope;color:#241C5E}
+.painel-resumo span{font-size:13px;color:#6E6C87}
+.painel-resumo button{margin-left:auto;border:1px solid #DFDBEF;background:#F8F7FC;color:#4B3ECB;border-radius:9px;padding:9px 14px;font:700 12px 'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;cursor:pointer}
+.painel-resumo button:hover{background:#EEEBFE}
+.painel-resumo button svg{width:15px}
+
+.painel{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.grupo-card{text-align:left;background:#fff;border:1px solid #E4E1F0;border-radius:15px;padding:18px;display:grid;gap:4px;cursor:pointer;transition:.15s;font:inherit}
+.grupo-card:hover{border-color:#6A59F7;box-shadow:0 8px 24px #241c5e14;transform:translateY(-1px)}
+.grupo-card .grupo-nome{font:700 15px Manrope;color:#241C5E;line-height:1.3}
+.grupo-card b{font:800 34px Manrope;color:#6A59F7;line-height:1.1}
+.grupo-card .grupo-acao{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:#6E6C87}
+.grupo-card .grupo-acao svg{width:14px;transform:rotate(-90deg)}
+.grupo-card:hover .grupo-acao{color:#4B3ECB}
+.grupo-card.medico{background:linear-gradient(160deg,#fff,#F6F4FE)}
+.grupo-card.medico b{color:#4B3ECB}
+
+.grupo-topo{display:flex;align-items:center;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.grupo-topo .voltar{border:1px solid #DFDBEF;background:#fff;color:#3D3A6B;border-radius:9px;padding:9px 13px;font:700 12px 'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;cursor:pointer}
+.grupo-topo .voltar:hover{background:#EEEBFE;border-color:#6A59F7;color:#4B3ECB}
+.grupo-topo .voltar svg{width:15px}
+.grupo-topo h2{margin:0;font:800 20px Manrope;color:#241C5E}
+.grupo-topo span{font-size:13px;color:#6E6C87}
+@media(max-width:600px){
+  .painel{grid-template-columns:1fr 1fr;gap:10px}
+  .grupo-card{padding:14px}
+  .grupo-card b{font-size:28px}
+  .grupo-card .grupo-nome{font-size:13px}
+  .painel-resumo{gap:14px;padding:14px 16px}
+  .painel-resumo button{margin-left:0;width:100%;justify-content:center}
+}
+
+/* Contador de currículos recentes */
+nav button{position:relative;white-space:nowrap}
+nav button .badge{margin-left:auto;flex:none;font-style:normal;font-size:11px;font-weight:800;background:#6A59F7;color:#fff;border-radius:20px;padding:2px 8px;min-width:22px;text-align:center;line-height:1.6}
+nav button.active .badge{background:#fff;color:#4B3ECB}
+
+.recentes{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #DED8FB;border-radius:12px;padding:12px 15px;margin-bottom:16px;font-size:13px;color:#3D3A6B}
+.recentes>svg{width:18px;flex:none;color:#5B4BEE}
+.recentes b{color:#241C5E}
+.recentes button{margin-left:auto;border:0;background:#EEEBFE;color:#4B3ECB;border-radius:9px;padding:8px 13px;font:700 12px 'DM Sans',sans-serif;cursor:pointer;white-space:nowrap}
+.recentes button:hover{background:#E5E0FD}
+.recentes.vazio{color:#6E6C87;border-color:#E9E6F4}
+.recentes.vazio>svg{color:#8887A0}
+
+.actions .sem-arquivo{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#6E6C87;background:#F8F7FC;border:1px dashed #DFDBEF;border-radius:8px;padding:8px 10px}
+.actions .sem-arquivo svg{width:14px;color:#8887A0}
+@media(max-width:600px){
+  .recentes{flex-wrap:wrap}
+  .recentes button{margin-left:0;width:100%}
+}

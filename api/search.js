@@ -88,7 +88,7 @@ export default async function handler(req,res){
     const rows=await sql`
       WITH base AS (
         SELECT id,name,phone,email,profession,council,council_number,city,state,experience_years,
-               skills,sectors,specialties,employers,education,summary,resume_name,created_at,
+               skills,sectors,specialties,employers,education,summary,resume_name,resume_type,created_at,
                coalesce(search_text,'') AS st
         FROM candidates
         WHERE (${stem}::text='' OR translate(lower(profession),${ACCENTS_FROM},${ACCENTS_TO}) LIKE ${profLike})
@@ -107,7 +107,7 @@ export default async function handler(req,res){
         FROM base
       )
       SELECT id,name,phone,email,profession,council,council_number,city,state,experience_years,
-             skills,sectors,specialties,employers,education,summary,resume_name,created_at,matched
+             skills,sectors,specialties,employers,education,summary,resume_name,resume_type,created_at,matched
       FROM scored
       WHERE ${groups.length}::int=0 OR json_array_length(matched)>0
       ORDER BY json_array_length(matched) DESC, experience_years DESC, created_at DESC

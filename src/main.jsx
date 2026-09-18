@@ -1,7 +1,7 @@
 import './polyfills.js';
 import React,{useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {Search,UploadCloud,FileText,Download,Eye,MessageCircle,Users,MapPin,Briefcase,CheckCircle2,Loader2,Lock,Trash2,Smartphone,Share2,Sparkles,Mail,Phone,Building2,GraduationCap,Award,Stethoscope,ChevronDown,ChevronUp,BadgeCheck,RefreshCw,AlertTriangle,X} from 'lucide-react';
+import {Search,UploadCloud,FileText,Download,Eye,MessageCircle,Users,MapPin,Briefcase,CheckCircle2,Loader2,Lock,Trash2,Smartphone,Share2,Sparkles,Mail,Phone,Building2,GraduationCap,Award,Stethoscope,ChevronDown,ChevronUp,BadgeCheck,RefreshCw,AlertTriangle,X,LayoutGrid,ArrowLeft,UserRound,Clock3,PencilLine} from 'lucide-react';
 import mammoth from 'mammoth/mammoth.browser';
 import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.mjs?url';
 import './styles.css';
@@ -100,6 +100,7 @@ function CandidateCard({c,onDelete,deleting}){
   const sectors=splitList(c.sectors),specialties=splitList(c.specialties),employers=splitList(c.employers),skills=splitList(c.skills);
   const matched=c.matched||[];
   const hasDetails=specialties.length||employers.length||skills.length||c.education||c.email||c.phone;
+  const semArquivo=c.resume_type==='manual';
   return <article className="candidate">
     <div className="avatar">{initials(c.name)}</div>
     <div className="person">
@@ -111,7 +112,7 @@ function CandidateCard({c,onDelete,deleting}){
       <div className="meta">
         <p><MapPin/>{place}</p>
         <p><Briefcase/>{yearsText(c.experience_years)} de experiência</p>
-        <p><FileText/>{c.resume_name}</p>
+        <p><FileText/>{semArquivo?'Sem arquivo · dados digitados':c.resume_name}</p>
       </div>
       {c.summary&&<p className="summary-text">{c.summary}</p>}
       {sectors.length>0&&<div className="field"><span><Stethoscope/>Setores</span><Chips items={sectors} matched={matched}/></div>}
@@ -134,8 +135,10 @@ function CandidateCard({c,onDelete,deleting}){
     </div>
     <div className="actions">
       {wa&&<a className="whatsapp" href={wa} target="_blank" rel="noreferrer"><MessageCircle/>WhatsApp</a>}
-      <a href={resumeLink(c,false)} target="_blank" rel="noreferrer"><Eye/>Visualizar</a>
-      <a href={resumeLink(c,true)} download={c.resume_name}><Download/>Baixar</a>
+      {semArquivo
+        ?<span className="sem-arquivo"><PencilLine/>Cadastro digitado pelo candidato</span>
+        :<><a href={resumeLink(c,false)} target="_blank" rel="noreferrer"><Eye/>Visualizar</a>
+           <a href={resumeLink(c,true)} download={c.resume_name}><Download/>Baixar</a></>}
       <button type="button" className="danger" onClick={()=>onDelete(c)} disabled={deleting}>{deleting?<Loader2 className="spin"/>:<Trash2/>}Excluir</button>
     </div>
   </article>;
@@ -211,6 +214,9 @@ function App(){
   const [updateInfo,setUpdateInfo]=useState('');
   const [showInstallHelp,setShowInstallHelp]=useState(false);
   const [saved,setSaved]=useState(false);
+  const [recentes,setRecentes]=useState(null);    // {horas,total} das últimas 2 horas
+  const [painel,setPainel]=useState(null);        // {total, grupos:[...]}
+  const [grupo,setGrupo]=useState(null);          // {grupo:{...}, results:[...]}
   const inputRef=useRef(null);
 
   useEffect(()=>{
@@ -218,6 +224,33 @@ function App(){
     window.addEventListener('beforeinstallprompt',onPrompt);
     return ()=>window.removeEventListener('beforeinstallprompt',onPrompt);
   },[]);
+
+  // Currículos recebidos nas últimas 2 horas: atualiza sozinho a cada minuto
+  // e sempre que a aba volta a ficar visível.
+  useEffect(()=>{
+    let vivo=true;
+    const buscar=()=>api('/api/recent').then(d=>{if(vivo)setRecentes(d)}).catch(()=>{});
+    buscar();
+    const intervalo=setInterval(buscar,60000);
+    const aoVoltar=()=>{if(document.visibilityState==='visible')buscar()};
+    document.addEventListener('visibilitychange',aoVoltar);
+    window.addEventListener('focus',aoVoltar);
+    return ()=>{vivo=false;clearInterval(intervalo);document.removeEventListener('visibilitychange',aoVoltar);window.removeEventListener('focus',aoVoltar)};
+  },[]);
+
+  /** Mostra na pesquisa os currículos que chegaram nas últimas 2 horas. */
+  const verRecentes=async()=>{
+    setTab('search');setLoading(true);setMessage('');setGrupo(null);
+    try{
+      const d=await api('/api/recent?listar=1');
+      setRecentes({horas:d.horas,total:d.total,agora:d.agora});
+      setResults(d.results||[]);
+      setFilters({profession:'',city:'',state:'',minExperience:0,maxExperience:null,sectors:[],keywords:[],
+        interpretation:`Currículos recebidos nas últimas ${d.horas} horas.`});
+      setQuery('');
+    }catch(err){handleError(err)}
+    finally{setLoading(false)}
+  };
 
   // Cadastros antigos (sem o texto do currículo) que ainda podem ser reprocessados.
   useEffect(()=>{
@@ -283,6 +316,7 @@ function App(){
       setDragging(false);
       if(inputRef.current)inputRef.current.value='';
       setSaved(true);
+      api('/api/recent').then(setRecentes).catch(()=>{});   // atualiza o contador das últimas horas
     }catch(err){handleError(err)}finally{setLoading(false)}
   };
 
@@ -292,6 +326,8 @@ function App(){
     try{
       await api(`/api/candidates?id=${encodeURIComponent(c.id)}`,{method:'DELETE'});
       setResults(list=>list.filter(x=>x.id!==c.id));
+      if(grupo)setGrupo(g=>g&&{...g,grupo:{...g.grupo,total:Math.max(0,g.grupo.total-1)},results:g.results.filter(x=>x.id!==c.id)});
+      if(painel)setPainel(p=>p&&{...p,total:Math.max(0,p.total-1),grupos:p.grupos.map(x=>x.chave===grupo?.grupo?.chave?{...x,total:Math.max(0,x.total-1)}:x).filter(x=>x.total>0)});
     }catch(err){handleError(err)}finally{setDeleting('')}
   };
 
@@ -324,14 +360,35 @@ function App(){
     setPassInput('');setNeedPass(false);setMessage('');
   };
 
-  const switchTab=t=>{setTab(t);setMessage('')};
+  const carregarPainel=async()=>{
+    setLoading(true);setMessage('');
+    try{setPainel(await api('/api/stats'))}
+    catch(err){handleError(err)}
+    finally{setLoading(false)}
+  };
+
+  const abrirGrupo=async g=>{
+    setLoading(true);setMessage('');
+    try{setGrupo(await api(`/api/stats?grupo=${encodeURIComponent(g.chave)}`))}
+    catch(err){handleError(err)}
+    finally{setLoading(false)}
+  };
+
+  const switchTab=t=>{
+    setTab(t);setMessage('');setGrupo(null);
+    if(t==='painel')carregarPainel();
+  };
 
   return <div className="app">
     <aside>
       <div className="brand"><img src="/logo-doccsc.png" alt="doc csc · centro de serviços compartilhados"/><span>Banco de Talentos</span></div>
       <nav>
-        <button type="button" className={tab==='search'?'active':''} onClick={()=>switchTab('search')}><Search/>Pesquisa inteligente</button>
+        <button type="button" className={tab==='search'?'active':''} onClick={()=>switchTab('search')}>
+          <Search/>Pesquisa inteligente
+          {recentes?.total>0&&<em className="badge" title={`${recentes.total} currículo(s) recebido(s) nas últimas ${recentes.horas} horas`}>{recentes.total>99?'99+':recentes.total}</em>}
+        </button>
         <button type="button" className={tab==='register'?'active':''} onClick={()=>switchTab('register')}><UploadCloud/>Cadastrar currículo</button>
+        <button type="button" className={tab==='painel'?'active':''} onClick={()=>switchTab('painel')}><LayoutGrid/>Painel por profissão</button>
       </nav>
       {!isStandalone()&&(installEvent||isMobile())&&<button type="button" className="install" onClick={install}><Smartphone/>Instalar no celular</button>}
       <div className="aside-note"><Users/><b>Talentos em um só lugar</b><span>Encontre profissionais por função, região e experiência.</span></div>
@@ -340,8 +397,8 @@ function App(){
       <header>
         <div>
           <small>RECRUTAMENTO INTELIGENTE</small>
-          <h1>{tab==='search'?'Encontre o profissional certo':'Cadastro de profissional'}</h1>
-          <p>{tab==='search'?'Pesquise em linguagem natural e encontre candidatos em segundos.':'Envie o currículo e o sistema cadastra o profissional automaticamente.'}</p>
+          <h1>{tab==='search'?'Encontre o profissional certo':tab==='register'?'Cadastro de profissional':'Painel por profissão'}</h1>
+          <p>{tab==='search'?'Pesquise em linguagem natural e encontre candidatos em segundos.':tab==='register'?'Envie o currículo e o sistema cadastra o profissional automaticamente.':'Quantos profissionais existem no banco de talentos, por profissão. Clique em uma profissão para ver os currículos.'}</p>
         </div>
         <div className="status"><i/>Sistema online</div>
       </header>
@@ -376,6 +433,13 @@ function App(){
       </div>}
 
       {tab==='search'?<section>
+        {recentes&&<div className={'recentes'+(recentes.total>0?'':' vazio')}>
+          <Clock3/>
+          <span>{recentes.total>0
+            ?<><b>{recentes.total} {recentes.total===1?'currículo recebido':'currículos recebidos'}</b> nas últimas {recentes.horas} horas.</>
+            :<>Nenhum currículo recebido nas últimas {recentes.horas} horas.</>}</span>
+          {recentes.total>0&&<button type="button" onClick={verRecentes} disabled={loading}>Ver os mais recentes</button>}
+        </div>}
         <form className="searchbox" onSubmit={search}>
           <label htmlFor="q">O que você procura?</label>
           <div><Search/><input id="q" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Ex.: Enfermeiros em Belém com mais de 3 anos em UTI e curso ACLS" required/><button disabled={loading}>{loading?<Loader2 className="spin"/>:<Search/>}Pesquisar</button></div>
@@ -397,6 +461,40 @@ function App(){
         {filters?.interpretation&&<p className="interpretation"><Sparkles/>{filters.interpretation}</p>}
         <div className="cards">{results.map(c=><CandidateCard key={c.id} c={c} onDelete={removeCandidate} deleting={deleting===c.id}/>)}</div>
         {filters&&results.length===0&&!message&&<div className="empty"><Search/><h3>Nenhum candidato encontrado</h3><p>Tente ampliar os critérios ou cadastrar um novo currículo.</p></div>}
+      </section>:tab==='painel'?<section>
+        {message&&<div className="alert">{message}</div>}
+
+        {grupo?<>
+          <div className="grupo-topo">
+            <button type="button" className="voltar" onClick={()=>setGrupo(null)}><ArrowLeft/>Voltar ao painel</button>
+            <div>
+              <h2>{grupo.grupo.rotulo||grupo.grupo.label}</h2>
+              <span>{grupo.results.length} {grupo.results.length===1?'currículo cadastrado':'currículos cadastrados'}</span>
+            </div>
+          </div>
+          <div className="cards">{grupo.results.map(c=><CandidateCard key={c.id} c={c} onDelete={removeCandidate} deleting={deleting===c.id}/>)}</div>
+          {grupo.results.length===0&&<div className="empty"><UserRound/><h3>Nenhum currículo neste grupo</h3><p>Os cadastros podem ter sido excluídos. Volte ao painel.</p></div>}
+        </>:<>
+          {loading&&!painel&&<div className="processing"><Loader2 className="spin"/><span><b>Carregando o painel...</b><small>Contando os cadastros por profissão.</small></span></div>}
+
+          {painel&&<>
+            <div className="painel-resumo">
+              <div><b>{painel.total}</b><span>{painel.total===1?'profissional cadastrado':'profissionais cadastrados'}</span></div>
+              <div><b>{painel.grupos.length}</b><span>{painel.grupos.length===1?'profissão':'profissões'}</span></div>
+              <button type="button" onClick={carregarPainel} disabled={loading}>{loading?<Loader2 className="spin"/>:<RefreshCw/>}Atualizar</button>
+            </div>
+
+            <div className="painel">
+              {painel.grupos.map(g=><button type="button" key={g.chave} className={'grupo-card'+(g.chave.startsWith('medico:')?' medico':'')} onClick={()=>abrirGrupo(g)}>
+                <span className="grupo-nome">{g.rotulo||g.label}</span>
+                <b>{g.total}</b>
+                <span className="grupo-acao">Ver currículos <ChevronDown/></span>
+              </button>)}
+            </div>
+
+            {painel.grupos.length===0&&<div className="empty"><UserRound/><h3>Nenhum currículo cadastrado</h3><p>Assim que os primeiros currículos entrarem, eles aparecem aqui agrupados por profissão.</p></div>}
+          </>}
+        </>}
       </section>:<section>
         <form className="register auto-register" onSubmit={submit}>
           <div className="form-title"><div><UploadCloud/></div><span><h2>Envie o currículo</h2><p>A inteligência artificial fará a leitura e o cadastro automaticamente.</p></span></div>
